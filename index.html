@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منظومة أصوال العائلية |  إدارة وتوثيق العوائل السعودية</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        saudi: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#0a5c36',
+                        },
+                        gold: {
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 pb-20">
+
+    <!-- شريط التحكم العلوي للمحاكاة وعرض العميل (Demo Simulation Control Bar) -->
+    <header class="sticky top-0 z-50 simulation-bar text-white shadow-xl border-b border-slate-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row items-center justify-between py-3 gap-3">
+                <!-- شعار وهوية المنصة -->
+                <div class="flex items-center gap-3 w-full md:w-auto justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-saudi-900 to-emerald-500 flex items-center justify-center text-gold-400 font-black text-xl shadow-lg border border-gold-500/30">
+                            <i class="fa-solid fa-tree"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-extrabold text-lg text-white">منظومة ساس العائلية</span>
+                                <span class="bg-emerald-500/20 text-emerald-300 text-xs px-2 py-0.5 rounded-full border border-emerald-400/30 font-semibold">محاكاة Phase 1</span>
+                            </div>
+                            <p class="text-xs text-slate-300">منصة إدارة المشجرات والمجتمعات العائلية السعودية</p>
+                        </div>
+                    </div>
+
+                    <!-- اختيار العائلة الحالية -->
+                    <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 text-xs">
+                        <span class="text-slate-400">البيئة الحالية:</span>
+                        <select id="globalFamilySelector" onchange="App.changeActiveFamily(this.value)" class="bg-slate-900 text-emerald-300 font-bold rounded px-2 py-1 border border-slate-600 focus:outline-none focus:border-emerald-500 cursor-pointer">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- أزرار التبديل السريع بين الأدوار والسيناريوهات الثلاثة -->
+                <div class="flex items-center gap-1.5 bg-slate-800/90 p-1.5 rounded-xl border border-slate-700 shadow-inner w-full md:w-auto justify-center">
+                    <button onclick="App.switchRole('owner')" id="roleBtn-owner" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700">
+                        <i class="fa-solid fa-crown text-gold-400"></i>
+                        <span>أونر المنصة (SaaS Owner)</span>
+                    </button>
+                    <button onclick="App.switchRole('admin')" id="roleBtn-admin" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700">
+                        <i class="fa-solid fa-user-shield text-emerald-400"></i>
+                        <span>أدمن العائلة (Family Admin)</span>
+                        <span id="adminPendingBadge" class="hidden bg-amber-500 text-slate-900 text-[10px] px-1.5 py-0.2 rounded-full font-black">0</span>
+                    </button>
+                    <button onclick="App.switchRole('member')" id="roleBtn-member" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700">
+                        <i class="fa-solid fa-users text-blue-400"></i>
+                        <span>بوابة الفرد (Family Member)</span>
+                    </button>
+                </div>
+
+                <!-- زر إعادة التعيين والدليل السريع -->
+                <div class="hidden lg:flex items-center gap-2">
+                    <button onclick="App.showDemoGuide()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-circle-question text-gold-400"></i>
+                        <span>دليل سيناريو العرض</span>
+                    </button>
+                    <button onclick="App.resetDemoData()" title="استعادة البيانات الأصلية" class="text-xs bg-red-900/30 hover:bg-red-900/60 text-red-300 px-2.5 py-1.5 rounded-lg border border-red-800/40 flex items-center gap-1 transition">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>إعادة ضبط</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- حاوية التنبيهات المباشرة (Toast Notifications) -->
+    <div id="toastContainer" class="fixed bottom-5 left-5 z-50 flex flex-col gap-2 max-w-sm"></div>
+
+    <!-- المحتوى الرئيسي للمحاكاة -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+
+        <!-- ============================================================= -->
+        <!-- السيناريو الأول: لوحة تحكم أونر المنصة (Super Admin / SaaS Owner) -->
+        <!-- ============================================================= -->
+        <section id="ownerView" class="view-section space-y-6 hidden">
+            <!-- شريط العنوان التعريفي بالأونر -->
+            <div class="bg-gradient-to-l from-slate-900 via-slate-800 to-saudi-900 text-white rounded-2xl p-6 shadow-xl border border-slate-700 relative overflow-hidden">
+                <div class="absolute -left-10 -bottom-10 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl"></div>
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
+                    <div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="bg-gold-500/20 text-gold-400 text-xs px-3 py-1 rounded-full border border-gold-400/30 font-bold flex items-center gap-1.5">
+                                <i class="fa-solid fa-crown"></i> مالك المنصة الرئيسي
+                            </span>
+                            <span class="text-slate-400 text-xs">نظام الاشتراكات والبيئات المستقلة (Multi-tenant SaaS)</span>
+                        </div>
+                        <h1 class="text-2xl font-black text-white">إدارة بيئات العوائل والباقات السحابية</h1>
+                        <p class="text-slate-300 text-sm mt-1">يمكنك كأونر إنشاء بيئة مستقلة لكل عائلة سعودية، مراقبة عدد الأفراد في كل شجرة، وتسليم الحساب للأدمن.</p>
+                    </div>
+                    <button onclick="App.openCreateFamilyModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-3 rounded-xl font-bold text-sm shadow-lg shadow-emerald-700/40 flex items-center gap-2 transition transform active:scale-95 pulse-green">
+                        <i class="fa-solid fa-plus-circle text-lg"></i>
+                        <span>إنشاء شجرة / بيئة عائلة جديدة</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- بطاقات مؤشرات الأداء والاشتراكات -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500">إجمالي العوائل المشتركة</p>
+                        <h3 id="statTotalFamilies" class="text-2xl font-black text-slate-800 mt-1">2</h3>
+                        <span class="text-[11px] text-emerald-600 font-bold"><i class="fa-solid fa-circle-check"></i> بيئات سحابية مفعلة</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-sitemap"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500">إجمالي الأفراد في المشجرات</p>
+                        <h3 id="statTotalMembers" class="text-2xl font-black text-slate-800 mt-1">156</h3>
+                        <span class="text-[11px] text-slate-500">مسجلين عبر الأشجار</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500">الإيراد السنوي المحقق</p>
+                        <h3 id="statTotalRevenue" class="text-2xl font-black text-slate-800 mt-1">600 ر.س</h3>
+                        <span class="text-[11px] text-emerald-600 font-bold">بناءً على حجم الأشجار</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-gold-50 text-gold-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-money-bill-trend-up"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500">الترقية التلقائية للباقات</p>
+                        <h3 class="text-lg font-bold text-slate-800 mt-1">نظام آلي بالكامل</h3>
+                        <span class="text-[11px] text-emerald-600 font-bold">حسب عدد الأفراد بالشجرة</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-calculator"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- جدول باقات الساس المعتمدة وفق المتطلبات -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-lg font-black text-slate-800">باقات الاشتراك لنظام ساس المشجرات</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">يتم احتساب الباقة آلياً لكل عائلة حسب تعداد المسجلين في شجرتهم</p>
+                    </div>
+                    <span class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-bold">نظام تسعير ساس موحد</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="pricingTiersCards">
+                    <!-- Dynamic Tier Cards -->
+                </div>
+            </div>
+
+            <!-- قائمة بيئات العوائل المسجلة في الساس -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg font-black text-slate-800">بيئات العوائل المسجلة (Family SaaS Tenants)</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">كل بيئة تمثل قاعدة بيانات وشجرة منفصلة لها أدمن وحسابات خاصة</p>
+                    </div>
+                    <span class="text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-200 font-bold">
+                        <i class="fa-solid fa-shield-halved ml-1"></i> عزل تام بين بيانات العوائل
+                    </span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-sm">
+                        <thead class="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 text-xs">
+                            <tr>
+                                <th class="py-3.5 px-5">اسم العائلة / البيئة</th>
+                                <th class="py-3.5 px-5">المدينة</th>
+                                <th class="py-3.5 px-5">المسؤول (الأدمن)</th>
+                                <th class="py-3.5 px-5">رقم الهاتف</th>
+                                <th class="py-3.5 px-5">أفراد الشجرة الحالية</th>
+                                <th class="py-3.5 px-5">الباقة المستحقة</th>
+                                <th class="py-3.5 px-5">الحالة</th>
+                                <th class="py-3.5 px-5 text-center">إجراءات الأونر</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ownerFamiliesTableBody" class="divide-y divide-slate-100">
+                            <!-- Dynamic rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ============================================================= -->
+        <!-- السيناريو الثاني: لوحة تحكم أدمن العائلة (Family Admin Dashboard) -->
+        <!-- ============================================================= -->
+        <section id="adminView" class="view-section space-y-6 hidden">
+            <!-- ترويسة أدمن العائلة وحالة الباقة -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-2xl bg-saudi-900 text-gold-400 flex items-center justify-center text-2xl shadow-md border border-gold-500/20">
+                            <i class="fa-solid fa-landmark"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h1 id="adminFamilyTitle" class="text-2xl font-black text-slate-800">عائلة آل سعيد</h1>
+                                <span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-bold">بيئة عائلية نشطة</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">
+                                مسؤول الشجرة: <span id="adminNameDisplay" class="font-bold text-slate-700">فهد بن عبد الرحمن آل سعيد</span> | 
+                                هاتف: <span id="adminPhoneDisplay" class="font-mono text-slate-600">0551234567</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- أزرار الإجراءات السريعة للأدمن -->
+                    <div class="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+                        <button onclick="App.openAddMemberModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span>إضافة فرد للمشجرة</span>
+                        </button>
+                        <button onclick="App.openWhatsAppInviteModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center gap-1.5">
+                            <i class="fa-brands fa-whatsapp text-sm text-emerald-300"></i>
+                            <span>دعوة عبر واتساب ويب</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- شريط الباقة والحدود وفق عدد أفراد الشجرة -->
+                <div class="mt-5 pt-1">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs gap-2 mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-slate-500">حالة اشتراك الساس:</span>
+                            <span id="adminTierBadge" class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">باقة 1 - 100 فرد (200 ر.س)</span>
+                        </div>
+                        <span id="adminTierProgressText" class="font-bold text-slate-700">11 من 100 فرد مستخدمين (11%)</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
+                        <div id="adminTierProgressBar" class="bg-gradient-to-r from-emerald-500 to-saudi-900 h-full rounded-full transition-all duration-500" style="width: 11%;"></div>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mt-2">
+                        <i class="fa-solid fa-circle-info text-emerald-600 ml-1"></i>
+                        كلما قام الأدمن أو أحد أفراد العائلة بإضافة مولود أو فرد جديد في الشجرة، يزيد العداد تلقائياً ويتم الانتقال للباقة التالية عند تخطي الحد.
+                    </p>
+                </div>
+            </div>
+
+            <!-- بطاقات الإحصائيات لداشبورد الأدمن -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold">إجمالي أفراد العائلة</p>
+                        <h3 id="adminStatMembersCount" class="text-2xl font-black text-slate-800 mt-1">11</h3>
+                        <span class="text-[11px] text-emerald-600 font-bold">موزعين على 4 أجيال</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-users-viewfinder"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer hover:border-amber-400 transition" onclick="App.switchAdminTab('approvals')">
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold">أخبار ومناسبات معلقة</p>
+                        <h3 id="adminStatPendingNews" class="text-2xl font-black text-amber-600 mt-1">2</h3>
+                        <span class="text-[11px] text-amber-600 font-bold">تتطلب اعتماد الأدمن</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-newspaper"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer hover:border-blue-400 transition" onclick="App.switchAdminTab('approvals')">
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold">وثائق ومرفقات معلقة</p>
+                        <h3 id="adminStatPendingDocs" class="text-2xl font-black text-blue-600 mt-1">1</h3>
+                        <span class="text-[11px] text-blue-600 font-bold">تتطلب اعتماد وتدقيق</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-folder-open"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold">دعوات الواتساب</p>
+                        <h3 id="adminStatInvitedCount" class="text-2xl font-black text-slate-800 mt-1">2</h3>
+                        <span class="text-[11px] text-slate-500">تم إرسالها للأفراد</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center text-xl">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- تبويبات أدمن العائلة -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="border-b border-slate-200 bg-slate-50 px-6 flex flex-wrap gap-2 pt-3">
+                    <button onclick="App.switchAdminTab('tree')" id="adminTabBtn-tree" class="px-4 py-3 text-xs font-bold rounded-t-xl transition border-b-2 border-emerald-600 text-emerald-700 bg-white flex items-center gap-2">
+                        <i class="fa-solid fa-diagram-project"></i>
+                        <span>المشجرة التفاعلية والأعضاء</span>
+                    </button>
+                    <button onclick="App.switchAdminTab('approvals')" id="adminTabBtn-approvals" class="px-4 py-3 text-xs font-bold rounded-t-xl transition text-slate-500 hover:text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                        <span>مركز الاعتماد والموافقات</span>
+                        <span id="adminApprovalsBadge" class="bg-amber-500 text-slate-900 text-[10px] px-1.5 py-0.2 rounded-full font-black">3</span>
+                    </button>
+                    <button onclick="App.switchAdminTab('feed')" id="adminTabBtn-feed" class="px-4 py-3 text-xs font-bold rounded-t-xl transition text-slate-500 hover:text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-bullhorn"></i>
+                        <span>ساحة العائلة المنشورة</span>
+                    </button>
+                    <button onclick="App.switchAdminTab('logs')" id="adminTabBtn-logs" class="px-4 py-3 text-xs font-bold rounded-t-xl transition text-slate-500 hover:text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check"></i>
+                        <span>سجل العمليات الحيوية</span>
+                    </button>
+                </div>
+
+                <div class="p-6">
+                    <!-- محتوى تبويب المشجرة والأعضاء -->
+                    <div id="adminTabContent-tree" class="space-y-6">
+                        <!-- رأس المشجرة وأزرار التصفية -->
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">مشجرة النسب الإلكترونية التفاعلية</h3>
+                                <p class="text-xs text-slate-500">تمثيل بصري للأجيال والتفرعات. يمكنك إضافة أبناء لأي شخص مباشرة بالنقر عليه.</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="inline-flex items-center gap-1.5 text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> نشط ومفعل
+                                </span>
+                                <span class="inline-flex items-center gap-1.5 text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> بانتظار تفعيل الدعوة
+                                </span>
+                                <span class="inline-flex items-center gap-1.5 text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span> متوفى رحمه الله
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- حاوية المشجرة البصرية التفاعلية -->
+                        <div class="tree-container" id="visualFamilyTreeContainer">
+                            <!-- Rendered dynamically by JS -->
+                        </div>
+
+                        <!-- جدول الأفراد وإرسال دعوات الواتساب -->
+                        <div class="pt-4 border-t border-slate-100">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="font-bold text-slate-800 text-sm">قائمة أفراد العائلة وإرسال الدعوات</h4>
+                                <span class="text-xs text-slate-500">إرسال رابط الدعوة المباشر لكل فرد عبر WhatsApp</span>
+                            </div>
+                            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                                <table class="w-full text-right text-xs">
+                                    <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                                        <tr>
+                                            <th class="py-3 px-4">الاسم الكامل</th>
+                                            <th class="py-3 px-4">الجيل والصفة</th>
+                                            <th class="py-3 px-4">رقم الجوال (للدخول)</th>
+                                            <th class="py-3 px-4">المدينة / المهنة</th>
+                                            <th class="py-3 px-4">حالة الحساب</th>
+                                            <th class="py-3 px-4 text-center">إجراءات ودعوة واتساب</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminMembersTableBody" class="divide-y divide-slate-100">
+                                        <!-- Dynamic rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- محتوى تبويب مركز الاعتماد والموافقات -->
+                    <div id="adminTabContent-approvals" class="space-y-6 hidden">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base">مركز تدقيق واعتماد طلبات أفراد العائلة</h3>
+                            <p class="text-xs text-slate-500">جميع الأخبار والمناسبات والوثائق المرفوعة من الأفراد لا تظهر في ساحة العائلة حتى يوافق عليها الأدمن.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- قسم الأخبار والمناسبات المعلقة -->
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between border-b pb-2 border-slate-100">
+                                    <h4 class="font-bold text-sm text-slate-700 flex items-center gap-2">
+                                        <i class="fa-solid fa-newspaper text-amber-500"></i>
+                                        <span>أخبار ومناسبات بانتظار الاعتماد</span>
+                                    </h4>
+                                    <span id="pendingNewsCountBadge" class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded font-bold">2 طلب</span>
+                                </div>
+                                <div id="adminPendingNewsList" class="space-y-3">
+                                    <!-- Dynamic news cards -->
+                                </div>
+                            </div>
+
+                            <!-- قسم الوثائق والأرشيف المعلق -->
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between border-b pb-2 border-slate-100">
+                                    <h4 class="font-bold text-sm text-slate-700 flex items-center gap-2">
+                                        <i class="fa-solid fa-file-shield text-blue-500"></i>
+                                        <span>وثائق تاريخية بانتظار الاعتماد</span>
+                                    </h4>
+                                    <span id="pendingDocsCountBadge" class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded font-bold">1 طلب</span>
+                                </div>
+                                <div id="adminPendingDocsList" class="space-y-3">
+                                    <!-- Dynamic doc cards -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- محتوى تبويب ساحة العائلة المعتمدة -->
+                    <div id="adminTabContent-feed" class="space-y-6 hidden">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base">ساحة العائلة والأرشيف المعتمد المنشور</h3>
+                            <p class="text-xs text-slate-500">هذا هو المحتوى النشط الذي يشاهده جميع أفراد العائلة في بواباتهم بعد اعتماد الأدمن.</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-700 mb-3 flex items-center gap-2">
+                                    <i class="fa-solid fa-bullhorn text-emerald-600"></i>
+                                    <span>الأخبار والمناسبات المعتمدة</span>
+                                </h4>
+                                <div id="approvedNewsFeedList" class="space-y-3">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-700 mb-3 flex items-center gap-2">
+                                    <i class="fa-solid fa-box-archive text-emerald-600"></i>
+                                    <span>وثائق وأرشيف العائلة المعتمد</span>
+                                </h4>
+                                <div id="approvedDocsFeedList" class="space-y-3">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- محتوى تبويب سجل العمليات الحيوية -->
+                    <div id="adminTabContent-logs" class="space-y-4 hidden">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">سجل العمليات الحيوية (Activity Log)</h3>
+                                <p class="text-xs text-slate-500">سجل لحظي لجميع نشاطات أفراد العائلة: تسجيل الدخول، إضافة أبناء، ونشر المحتوى.</p>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 rounded-xl border border-slate-200 p-4 divide-y divide-slate-200/70" id="adminActivityLogsList">
+                            <!-- Dynamic logs -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ============================================================= -->
+        <!-- السيناريو الثالث: بوابة فرد العائلة (Family Member Portal) -->
+        <!-- ============================================================= -->
+        <section id="memberView" class="view-section space-y-6 hidden">
+            
+            <!-- مرحلة أ: محاكاة الدخول برابط دعوة الواتساب ورمز OTP التجريبي -->
+            <div id="memberLoginStep" class="max-w-xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+                <!-- بانر محاكاة واتساب -->
+                <div class="bg-emerald-800 text-white p-5 text-center">
+                    <div class="w-14 h-14 bg-emerald-700/80 rounded-2xl flex items-center justify-center mx-auto mb-2 text-2xl border border-emerald-500/30">
+                        <i class="fa-brands fa-whatsapp text-emerald-300"></i>
+                    </div>
+                    <span class="text-xs bg-emerald-900/60 text-emerald-200 px-3 py-1 rounded-full border border-emerald-600/40 font-bold">
+                        محاكاة فتح رابط الدعوة
+                    </span>
+                    <h2 class="text-xl font-black mt-2">الانضمام إلى بوابة العائلة</h2>
+                    <p class="text-xs text-emerald-100 mt-1">أدخل رقم هاتفك المسجل من قبل أدمن العائلة للتحقق والدخول للبوابة</p>
+                </div>
+
+                <div class="p-6 space-y-5">
+                    <!-- نموذج إدخال رقم الهاتف (نظيف واحترافي بدون كشف بيانات أي فرد) -->
+                    <form id="memberPhoneForm" onsubmit="App.handleSendOtp(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">رقم جوال فرد العائلة</label>
+                            <div class="flex items-stretch rounded-xl border border-slate-300 overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-emerald-500 bg-white transition shadow-sm" dir="ltr">
+                                <div class="bg-slate-100 px-3.5 flex items-center gap-1.5 border-r border-slate-200 text-xs font-bold text-slate-700 select-none">
+                                    <span>🇸🇦</span>
+                                    <span class="font-mono text-slate-600">+966</span>
+                                </div>
+                                <input type="tel" id="memberPhoneInput" required placeholder="05xxxxxxxx" class="w-full px-3.5 py-2.5 font-mono text-sm focus:outline-none text-left placeholder:text-slate-400 bg-transparent text-slate-800">
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-1.5">
+                                <i class="fa-solid fa-shield-halved text-emerald-600 ml-1"></i>
+                                أدخل رقم جوالك المسجل والمعتمد من قبل إدارة العائلة لاستلام رمز التحقق والدخول للبوابة.
+                            </p>
+                        </div>
+
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl shadow transition text-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            <span>إرسال رمز التحقق OTP</span>
+                        </button>
+                    </form>
+
+                    <!-- محاكاة كود OTP الظاهر للعميل (المتطلب الخاص بـ Phase 1) -->
+                    <div id="otpSimulationSection" class="hidden space-y-4 pt-4 border-t border-slate-200">
+                        <div class="otp-simulation-box p-4 rounded-xl text-amber-900 text-xs flex items-start gap-3">
+                            <i class="fa-solid fa-mobile-screen text-amber-600 text-xl mt-0.5"></i>
+                            <div class="flex-1">
+                                <span class="font-extrabold block text-sm text-amber-800">محاكاة رسائل SMS (Phase 1):</span>
+                                <p class="text-xs text-amber-700 mt-0.5">نظراً لعدم الربط مع بوابة الرسائل المدفوعة حالياً، تم توليد رمز التحقق التجريبي التالي:</p>
+                                <div class="flex items-center gap-3 mt-2">
+                                    <span id="generatedOtpDisplay" class="font-mono text-xl font-black bg-white px-3 py-1 rounded-lg border border-amber-300 text-amber-900 tracking-widest">
+                                        ----
+                                    </span>
+                                    <button type="button" onclick="App.autoFillOtp()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg shadow transition flex items-center gap-1">
+                                        <i class="fa-solid fa-magic-wand-sparkles"></i>
+                                        <span>إدخال تلقائي وتأكيد</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- إدخال رمز التحقق يدوياً -->
+                        <form id="memberOtpForm" onsubmit="App.handleVerifyOtp(event)" class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">أدخل رمز التحقق المكون من 4 أرقام</label>
+                                <input type="text" id="memberOtpInput" maxlength="4" placeholder="1234" class="w-full text-center font-mono text-xl tracking-widest py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            </div>
+                            <button type="submit" class="w-full bg-saudi-900 hover:bg-saudi-800 text-white font-bold py-2.5 rounded-xl shadow transition text-sm flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-right-to-bracket"></i>
+                                <span>التحقق وتأكيد الدخول للبوابة</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- مرحلة ب: لوحة وبوابة الفرد بعد تسجيل الدخول بنجاح -->
+            <div id="memberDashboardStep" class="hidden space-y-6">
+                <!-- بانر ترحيب الفرد -->
+                <div class="bg-gradient-to-l from-saudi-900 to-emerald-800 text-white rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center text-3xl text-gold-400">
+                            <i class="fa-solid fa-user-check"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-xl font-black text-white" id="currentMemberNameDisplay">فيصل بن فهد آل سعيد</h2>
+                                <span class="bg-emerald-500/30 text-emerald-200 text-xs px-2.5 py-0.5 rounded-full font-bold border border-emerald-400/30">عضو موثق</span>
+                            </div>
+                            <p class="text-xs text-emerald-100 mt-1" id="currentMemberDetailsDisplay">
+                                الجيل الثالث | الرياض | رائد أعمال تقني
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- أزرار الإجراءات للعضو -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="App.openAddChildModal()" class="bg-white hover:bg-slate-100 text-saudi-900 text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-child text-emerald-700"></i>
+                            <span>إضافة فرد جديد تحتي (ابن/ابنة)</span>
+                        </button>
+                        <button onclick="App.openCreateNewsModal()" class="bg-gold-500 hover:bg-gold-600 text-slate-900 text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-bullhorn"></i>
+                            <span>نشر خبر / مناسبة</span>
+                        </button>
+                        <button onclick="App.openUploadDocModal()" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-file-arrow-up"></i>
+                            <span>رفع وثيقة عائلية</span>
+                        </button>
+                        <button onclick="App.logoutMember()" title="تسجيل الخروج" class="bg-black/30 hover:bg-black/50 text-white text-xs font-bold px-3 py-2.5 rounded-xl border border-white/20 transition">
+                            <i class="fa-solid fa-power-off"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- العمود الأيمن: تعديل الملف الشخصي وأفراد فرعه -->
+                    <div class="space-y-6">
+                        <!-- بطاقة تعديل البيانات الشخصية -->
+                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                            <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                                <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-id-card text-emerald-600"></i>
+                                    <span>بياناتي الشخصية</span>
+                                </h3>
+                                <button onclick="App.toggleEditProfile()" id="editProfileToggleBtn" class="text-xs text-emerald-700 hover:underline font-bold">
+                                    تعديل
+                                </button>
+                            </div>
+
+                            <!-- عرض البيانات -->
+                            <div id="profileViewBox" class="space-y-3 text-xs">
+                                <div>
+                                    <span class="text-slate-400 block">الاسم:</span>
+                                    <span id="profName" class="font-bold text-slate-800 text-sm"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block">رقم الجوال:</span>
+                                    <span id="profPhone" class="font-mono font-bold text-slate-700"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block">المدينة والإقامة:</span>
+                                    <span id="profCity" class="font-bold text-slate-700"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block">المهنة والاهتمام:</span>
+                                    <span id="profJob" class="font-bold text-slate-700"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block">نبذة تعريفية:</span>
+                                    <p id="profBio" class="text-slate-600 leading-relaxed mt-0.5"></p>
+                                </div>
+                            </div>
+
+                            <!-- نموذج تعديل البيانات -->
+                            <form id="profileEditForm" onsubmit="App.handleSaveProfile(event)" class="space-y-3 hidden text-xs">
+                                <div>
+                                    <label class="block font-bold text-slate-700 mb-1">الاسم</label>
+                                    <input type="text" id="editNameInput" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs">
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-700 mb-1">المدينة</label>
+                                    <input type="text" id="editCityInput" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs">
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-700 mb-1">المهنة</label>
+                                    <input type="text" id="editJobInput" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs">
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-700 mb-1">نبذة</label>
+                                    <textarea id="editBioInput" rows="2" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs"></textarea>
+                                </div>
+                                <div class="flex items-center gap-2 pt-2">
+                                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-1.5 rounded-lg">حفظ التغييرات</button>
+                                    <button type="button" onclick="App.toggleEditProfile()" class="bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg">إلغاء</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- قائمة الأفراد والأبناء التابعين لهذا العضو -->
+                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                            <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+                                <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-child-reaching text-emerald-600"></i>
+                                    <span>أبنائي وذريتي في المشجرة</span>
+                                </h3>
+                                <button onclick="App.openAddChildModal()" class="text-xs bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-2.5 py-1 rounded font-bold">
+                                    + إضافة
+                                </button>
+                            </div>
+                            <div id="memberChildrenList" class="space-y-2 text-xs">
+                                <!-- Dynamic children list -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- العمود الأوسط والأيسر: منشوراتي وطلباتي + ساحة العائلة المعتمدة -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- بطاقة متابعة حالة طلباتي (المرسلة للاعتماد) -->
+                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                            <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
+                                <div>
+                                    <h3 class="font-bold text-sm text-slate-800">متابعة طلباتي ومنشوراتي</h3>
+                                    <p class="text-[11px] text-slate-500">حالة الأخبار والوثائق التي قمت بتقديمها لأدمن العائلة</p>
+                                </div>
+                                <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-bold">متابعة لحظية</span>
+                            </div>
+                            <div id="memberSubmissionsList" class="space-y-3">
+                                <!-- Dynamic submissions -->
+                            </div>
+                        </div>
+
+                        <!-- ساحة أخبار العائلة المعتمدة -->
+                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                            <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
+                                <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-newspaper text-emerald-600"></i>
+                                    <span>آخر أخبار ومناسبات العائلة المعتمدة</span>
+                                </h3>
+                                <span class="text-xs text-slate-500">معتمدة من الأدمن</span>
+                            </div>
+                            <div id="memberApprovedFeedList" class="space-y-3">
+                                <!-- Dynamic feed -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+
+    <!-- ============================================================= -->
+    <!-- النوافذ المنبثقة (Modals & Dialogs) -->
+    <!-- ============================================================= -->
+
+    <!-- مودال 1: إنشاء شجرة عائلة جديدة (Super Admin) -->
+    <div id="modalCreateFamily" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative animate-in fade-in">
+            <button onclick="App.closeModal('modalCreateFamily')" class="absolute top-4 left-4 text-slate-400 hover:text-slate-600 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-plus-circle"></i>
+                </div>
+                <div>
+                    <h3 class="font-black text-slate-800 text-lg">إنشاء بيئة وشجرة عائلة جديدة</h3>
+                    <p class="text-xs text-slate-500">تجهيز بيئة سحابية مستقلة وحساب الأدمن المسؤول</p>
+                </div>
+            </div>
+            <form onsubmit="App.handleCreateFamily(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">اسم العائلة</label>
+                    <input type="text" id="newFamName" required placeholder="مثال: عائلة آل تميم" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">المدينة / المنطقة</label>
+                        <input type="text" id="newFamCity" required placeholder="مثال: القصيم - بريدة" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">سنة التأسيس التقريبية</label>
+                        <input type="text" id="newFamYear" placeholder="مثال: 1360 هـ" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs">
+                    </div>
+                </div>
+                <div class="pt-2 border-t border-slate-100">
+                    <h4 class="font-bold text-slate-800 mb-2 text-xs">بيانات أدمن العائلة (المسؤول):</h4>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">اسم المسؤول الرباعي</label>
+                            <input type="text" id="newFamAdminName" required placeholder="مثال: عبد العزيز بن صالح آل تميم" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">رقم جوال الأدمن</label>
+                                <input type="text" id="newFamAdminPhone" required placeholder="05xxxxxxxx" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs font-mono">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">البريد الإلكتروني</label>
+                                <input type="email" id="newFamAdminEmail" placeholder="admin@altamim.sa" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-3 flex items-center justify-end gap-2">
+                    <button type="button" onclick="App.closeModal('modalCreateFamily')" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 font-bold">إلغاء</button>
+                    <button type="submit" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow">إنشاء وتسليم البيئة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- مودال 2: بطاقة تسليم الحساب للأدمن (Handover Credentials Modal) -->
+    <div id="modalHandover" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative animate-in fade-in">
+            <button onclick="App.closeModal('modalHandover')" class="absolute top-4 left-4 text-slate-400 hover:text-slate-600 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="text-center mb-4">
+                <div class="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto mb-2 text-2xl">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+                <h3 class="font-black text-slate-800 text-lg">بيانات تسليم بيئة العائلة للأدمن</h3>
+                <p class="text-xs text-slate-500 mt-1">يمكنك نسخ هذه الرسالة وإرسالها للأدمن عبر واتساب أو البريد</p>
+            </div>
+
+            <!-- رابط المنظومة الأساسي (Base URL) -->
+            <div class="mb-3 text-xs">
+                <div class="flex items-center justify-between mb-1">
+                    <label class="font-bold text-slate-700">رابط المنظومة الأساسي (Base URL):</label>
+                    <span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded">محتسب تلقائياً</span>
+                </div>
+                <input type="text" id="handoverBaseUrlInput" oninput="App.handleBaseUrlChange(this.value)" class="w-full px-3 py-1.5 font-mono text-xs rounded-lg border border-slate-300 bg-slate-50 focus:bg-white text-slate-800" dir="ltr">
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-2 font-mono" id="handoverCredentialsBox">
+                <!-- Generated text -->
+            </div>
+            <div class="mt-4 flex items-center gap-2">
+                <button onclick="App.copyHandoverText()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow">
+                    <i class="fa-solid fa-copy"></i>
+                    <span>نسخ نص التسليم</span>
+                </button>
+                <button onclick="App.closeModal('modalHandover')" class="bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs">
+                    إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال 3: إضافة فرد جديد للمشجرة (من الأدمن) -->
+    <div id="modalAddMember" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative">
+            <button onclick="App.closeModal('modalAddMember')" class="absolute top-4 left-4 text-slate-400 hover:text-slate-600 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-user-plus"></i>
+                </div>
+                <div>
+                    <h3 class="font-black text-slate-800 text-base">إضافة فرد جديد في شجرة العائلة</h3>
+                    <p class="text-xs text-slate-500">سيتم ربطه في الشجرة وتوليد رابط دعوة خاص برقم جواله</p>
+                </div>
+            </div>
+            <form onsubmit="App.handleAddMember(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">الاسم الكامل</label>
+                    <input type="text" id="newMemberName" required placeholder="مثال: خالد بن فهد آل سعيد" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">الجنس</label>
+                        <select id="newMemberGender" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white">
+                            <option value="male">ذكر</option>
+                            <option value="female">أنثى</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">الجيل في العائلة</label>
+                        <select id="newMemberGen" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white">
+                            <option value="2">الجيل الثاني (أبناء)</option>
+                            <option value="3" selected>الجيل الثالث (أحفاد)</option>
+                            <option value="4">الجيل الرابع (أبناء الأحفاد)</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">الأب / الفرع المباشر في الشجرة</label>
+                    <select id="newMemberParent" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white">
+                        <!-- Dynamic list of fathers -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">رقم الجوال (مهم جداً لدعوة واتساب والتحقق)</label>
+                    <input type="text" id="newMemberPhone" required placeholder="05xxxxxxxx" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs font-mono">
+                    <p class="text-[10px] text-slate-400 mt-0.5">سيتطابق هذا الرقم مع تحقق OTP عند قبول الدعوة.</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">المدينة</label>
+                        <input type="text" id="newMemberCity" placeholder="الرياض" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">المهنة</label>
+                        <input type="text" id="newMemberJob" placeholder="مهندس / طالب" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs">
+                    </div>
+                </div>
+                <div class="pt-3 flex items-center justify-end gap-2">
+                    <button type="button" onclick="App.closeModal('modalAddMember')" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 font-bold">إلغاء</button>
+                    <button type="submit" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow">حفظ وإضافة للشجرة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- مودال 4: دعوة عبر واتساب ويب (WhatsApp Web Invite Modal) -->
+    <div id="modalWhatsAppInvite" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative">
+            <button onclick="App.closeModal('modalWhatsAppInvite')" class="absolute top-4 left-4 text-slate-400 hover:text-slate-600 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl">
+                    <i class="fa-brands fa-whatsapp"></i>
+                </div>
+                <div>
+                    <h3 class="font-black text-slate-800 text-base">إرسال دعوة انضمام عبر WhatsApp Web</h3>
+                    <p class="text-xs text-slate-500">إرسال رابط مخصص للفرد مع رسالة دعوة وترحيب جاهزة</p>
+                </div>
+            </div>
+            <div class="space-y-4 text-xs">
+                <!-- رابط النظام الأساسي (Base URL) المعتمد للمشروع -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block font-bold text-slate-700">رابط المنظومة الأساسي (Base URL):</label>
+                        <span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded">محتسب تلقائياً من المتصفح</span>
+                    </div>
+                    <div class="flex items-center gap-1.5" dir="ltr">
+                        <input type="text" id="inviteBaseUrlInput" oninput="App.handleBaseUrlChange(this.value)" placeholder="file:///... أو http://localhost:8000" class="w-full px-3 py-2 font-mono text-xs rounded-lg border border-slate-300 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800">
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1">يُبنى عليه رابط دعوة الواتساب المخصص لكل فرد ليفتح المنظومة مباشرة عند النقر عليه.</p>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">اختر الفرد المراد دعوته:</label>
+                    <select id="inviteMemberSelect" onchange="App.updateInvitePreview()" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white font-bold">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">معاينة نص رسالة الواتساب:</label>
+                    <div id="whatsappMessagePreview" class="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 text-emerald-950 whitespace-pre-line leading-relaxed text-xs">
+                        <!-- preview -->
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 pt-2">
+                    <button onclick="App.openWhatsAppWebDirect()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 shadow">
+                        <i class="fa-brands fa-whatsapp text-base"></i>
+                        <span>فتح واتساب ويب الآن وإرسال الرسالة</span>
+                    </button>
+                    <button onclick="App.testMemberLoginDirect()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-2.5 rounded-xl text-xs flex items-center gap-1.5 shadow" title="تجربة دخول هذا العضو مباشرة">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        <span>محاكاة دخول العضو</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال 5: إضافة ابن/فرد تحت العضو (Child Addition by Member) -->
+    <div id="modalAddChild" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative">
+            <button onclick="App.closeModal('modalAddChild')" class="absolute top-4 left-4 text-slate-400 hover:text-slate-600 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-child"></i>
+                </div>
+                <div>
+                    <h3 class="font-black text-slate-800 text-base">إضافة فرد جديد تحتي في المشجرة</h3>
+                    <p class="text-xs text-slate-500">سيتم احتساب هذا الفرد في الشجرة وتحديث باقة الساس فوراً</p>
+                </div>
+            </div>
+            <form onsubmit="App.handleAddChildSubmit(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">اسم الابن / الابنة</label>
+                    <input type="text" id="newChildName" required placeholder="مثال: سلمان بن فيصل آل سعيد" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">الجنس</label>
+                        <select id="newChildGender" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white">
+                            <option value="male">ذكر</option>
+                            <option value="female">أنثى</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">المدينة</label>
+                        <input type="text" id="newChildCity" placeholder="الرياض" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">رقم الجوال (اختياري للصغار)</label>
+                    <input type="text" id="newChildPhone" placeholder="05xxxxxxxx (اختياري)" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs font-mono">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">سنة الميلاد أو العمر التقريبي</label>
+                    <input type="text" id="newChildBio" placeholder="مثال: مولود عام 1446 هـ" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs">
+                </div>
+                <div class="pt-3 flex items-center justify-end gap-2">
+                    <button type="button" onclick="App.closeModal('modalAddChild')" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 font-bold">إلغاء</button>
+                    <button type="submit" class="px-5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold shadow">إضافة الفرد للشجرة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- مودال 6: إضافة خبر / مناسبة عائلية جديدة (Member News Submission) -->
+    <div id="modalCreateNews" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative">
+            <button onclick="App.closeModal('modalCreateNews')" class="absolute top-4 left-4 text-slate-400 hover:text-slate-600 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-gold-100 text-gold-700 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-bullhorn"></i>
+                </div>
+                <div>
+                    <h3 class="font-black text-slate-800 text-base">نشر خبر أو مناسبة عائلية جديدة</h3>
+                    <p class="text-xs text-slate-500">سيتم إرسال الخبر لأدمن العائلة للاعتماد قبل ظهوره للجميع</p>
+                </div>
+            </div>
+            <form onsubmit="App.handleCreateNewsSubmit(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">عنوان الخبر / المناسبة</label>
+                    <input type="text" id="newNewsTitle" required placeholder="مثال: حفل تخرج المهندس خالد بن فهد" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">تصنيف المناسبة</label>
+                        <select id="newNewsCategory" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white">
+                            <option value="زواج">زواج ومصاهرة</option>
+                            <option value="مولود جديد">مولود جديد</option>
+                            <option value="تخرج وإنجاز">تخرج وإنجاز</option>
+                            <option value="لقاء عائلي">لقاء دوري / سنوي</option>
+                            <option value="عزاء ومواساة">عزاء ومواساة</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">تاريخ المناسبة</label>
+                        <input type="date" id="newNewsDate" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">تفاصيل الخبر والدعوة</label>
+                    <textarea id="newNewsContent" required rows="3" placeholder="اكتب تفاصيل المناسبة والمكان والدعوة الكريمة..." class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs"></textarea>
+                </div>
+                <div class="pt-3 flex items-center justify-end gap-2">
+                    <button type="button" onclick="App.closeModal('modalCreateNews')" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 font-bold">إلغاء</button>
+                    <button type="submit" class="px-5 py-2 rounded-lg bg-gold-600 hover:bg-gold-500 text-slate-900 font-bold shadow">إرسال للاعتماد</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- مودال 7: رفع وثيقة أو صورة أرشيفية (Upload Document Modal) -->
+    <div id="modalUploadDoc" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative">
+            <button onclick="App.closeModal('modalUploadDoc')" class="absolute top-4 left-4 text-slate-400 hover:text-slate-600 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-file-shield"></i>
+                </div>
+                <div>
+                    <h3 class="font-black text-slate-800 text-base">رفع وثيقة أو صورة تاريخية للعائلة</h3>
+                    <p class="text-xs text-slate-500">حفظ الأرشيف والمخطوطات والصكوك في سجل العائلة</p>
+                </div>
+            </div>
+            <form onsubmit="App.handleUploadDocSubmit(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">عنوان الوثيقة أو الصورة</label>
+                    <input type="text" id="newDocTitle" required placeholder="مثال: حجة وقف الجد عبد الرحمن 1362هـ" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">تصنيف الوثيقة</label>
+                    <select id="newDocCategory" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white">
+                        <option value="صكوك وأوقاف">صكوك وأوقاف</option>
+                        <option value="صور تاريخية">صور قديمة ونادرة</option>
+                        <option value="مخطوطات النسب">مخطوطات النسب وشجرات قديمة</option>
+                        <option value="شهادات وإنجازات">شهادات وتكريم تاريخي</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">وصف موجز وقصة الوثيقة</label>
+                    <textarea id="newDocDescription" required rows="2" placeholder="اكتب نبذة عن تاريخ هذه الوثيقة وأهميتها للأسرة..." class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs"></textarea>
+                </div>
+                <!-- محاكاة ملف مرفوع -->
+                <div class="p-3 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 text-center">
+                    <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400 mb-1"></i>
+                    <p class="text-[11px] text-slate-500">ملف تجريبي افتراضي جاهز للإرفاق (صورة عالية الدقة / PDF)</p>
+                </div>
+                <div class="pt-3 flex items-center justify-end gap-2">
+                    <button type="button" onclick="App.closeModal('modalUploadDoc')" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 font-bold">إلغاء</button>
+                    <button type="submit" class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold shadow">رفع للاعتماد والمراجعة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- مودال 8: دليل العرض للعميل (Client Demo Walkthrough Guide) -->
+    <div id="modalDemoGuide" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 relative max-h-[90vh] overflow-y-auto">
+            <button onclick="App.closeModal('modalDemoGuide')" class="absolute top-4 left-4 text-slate-400 hover:text-slate-600 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 rounded-2xl bg-gold-100 text-gold-700 flex items-center justify-center text-2xl">
+                    <i class="fa-solid fa-lightbulb"></i>
+                </div>
+                <div>
+                    <h3 class="font-black text-slate-800 text-lg">دليل سيناريو العرض للعميل (Demo Guide)</h3>
+                    <p class="text-xs text-slate-500">خطوات مقترحة لتقديم العرض وإبهار العميل بكامل مزايا الساس</p>
+                </div>
+            </div>
+            <div class="space-y-4 text-xs text-slate-700 leading-relaxed">
+                <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <span class="font-bold text-emerald-800 block text-sm mb-1">1️⃣ سيناريو أونر المنصة (Super Admin):</span>
+                    <ul class="list-disc list-inside space-y-1 text-slate-600">
+                        <li>أظهر للعميل كيف يمتلك الأونر لوحة مركزية لكل العوائل المشتركة مع نظام الباقات (200 / 400 / 600 ر.س).</li>
+                        <li>انقر على زر <strong>"إنشاء شجرة / بيئة عائلة جديدة"</strong> لإظهار كيف يتم إنشاء مستأجر ساس مستقل فورياً.</li>
+                        <li>أظهر بطاقة <strong>"تسليم الحساب للأدمن"</strong> وكيف يتم تسليم الصلاحيات للمسؤول.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <span class="font-bold text-emerald-800 block text-sm mb-1">2️⃣ سيناريو أدمن ومسؤول العائلة:</span>
+                    <ul class="list-disc list-inside space-y-1 text-slate-600">
+                        <li>انتقل لتبويب <strong>أدمن العائلة</strong>، واستعرض المشجرة التفاعلية وشريط استهلاك الباقة.</li>
+                        <li>انقر على <strong>"دعوة عبر واتساب ويب"</strong> لإظهار كيف يتم توليد رسالة ورابط جاهز لإرساله بالواتساب.</li>
+                        <li>استعرض <strong>"مركز الاعتماد والموافقات"</strong> واشرح كيف أن أي خبر أو وثيقة يرفعها الأفراد تظل معلقة حتى يعتمدها الأدمن.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <span class="font-bold text-emerald-800 block text-sm mb-1">3️⃣ سيناريو فرد العائلة ورمز OTP:</span>
+                    <ul class="list-disc list-inside space-y-1 text-slate-600">
+                        <li>انتقل إلى <strong>بوابة الفرد</strong>، واختر رقم جوال <code>0509876543</code> (فيصل بن فهد).</li>
+                        <li>اضغط إرسال، ووضح للعميل <strong>صندوق محاكاة رمز التحقق OTP</strong> المتاح لتسهيل فيز 1 بدون تكلفة SMS.</li>
+                        <li>بعد الدخول، انقر على <strong>"إضافة فرد جديد تحتي (ابن/ابنة)"</strong>، ولاحظ كيف يزيد فوراً تعداد المشجرة وتأثيره على باقة الساس!</li>
+                        <li>انشر خبراً أو ارفع وثيقة، ثم عد كأدمن لتجد إشعار الاعتماد المباشر.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-5 text-center">
+                <button onclick="App.closeModal('modalDemoGuide')" class="bg-saudi-900 hover:bg-saudi-800 text-white font-bold px-6 py-2.5 rounded-xl text-xs shadow">
+                    فهمت ذلك، إغلاق الدليل
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

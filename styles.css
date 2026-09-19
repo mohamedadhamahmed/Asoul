@@ -1,0 +1,153 @@
+/* تصميم وتنسيقات نظام ساس العوائل السعودية - هوية عصرية وفاخرة */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap');
+
+:root {
+    --font-cairo: 'Cairo', sans-serif;
+    --font-tajawal: 'Tajawal', sans-serif;
+    --primary-saudi: #0a5c36;
+    --primary-emerald: #059669;
+    --gold-accent: #d4af37;
+    --gold-warm: #ca8a04;
+    --sand-bg: #fbfbfa;
+    --card-border: #e2e8f0;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: var(--font-cairo);
+}
+
+body {
+    background-color: #f8fafc;
+    color: #1e293b;
+    direction: rtl;
+    text-align: right;
+    overflow-x: hidden;
+}
+
+/* تخصيص شريط التمرير */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* تنسيقات المشجرة العائلية الشجرية */
+.tree-container {
+    overflow-x: auto;
+    min-height: 480px;
+    padding: 30px 20px;
+    background: radial-gradient(circle at center, #ffffff 0%, #f8fafc 100%);
+    border: 1px dashed #cbd5e1;
+    border-radius: 1rem;
+    position: relative;
+}
+
+.tree-level {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    position: relative;
+    margin-bottom: 40px;
+}
+
+.tree-node-card {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid #e2e8f0;
+    position: relative;
+}
+
+.tree-node-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -6px rgba(10, 92, 54, 0.15), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+    border-color: #10b981;
+}
+
+.tree-node-card.deceased {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-color: #cbd5e1;
+}
+
+.tree-node-card.active-member {
+    border-top: 4px solid #059669;
+}
+
+.tree-node-card.invited-member {
+    border-top: 4px solid #f59e0b;
+}
+
+/* تأثيرات الانتقال للتبويبات والواجهات */
+.view-fade {
+    animation: fadeInView 0.3s ease-in-out;
+}
+
+@keyframes fadeInView {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* كارت الباقة النشطة */
+.pricing-active-card {
+    border: 2px solid #059669 !important;
+    position: relative;
+    background: #ecfdf5;
+}
+
+.pricing-active-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #059669;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 14px;
+    border-radius: 9999px;
+    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.3);
+}
+
+/* تنسيق الـ OTP التجريبي */
+.otp-simulation-box {
+    background: linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%);
+    border: 1px dashed #d97706;
+}
+
+/* وميض لطيف للأزرار الحيوية */
+.pulse-green {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: pulseG 2s infinite;
+}
+
+@keyframes pulseG {
+    0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+/* شريط محاكاة الأدوار العلوي الثابت */
+.simulation-bar {
+    backdrop-filter: blur(12px);
+    background: rgba(15, 23, 42, 0.94);
+}
